@@ -22,7 +22,6 @@ class stats {
 
         std::vector<std::vector<long>> exploded; //[0] is bool for is exploded? [1] is for explosion stage, [2] is for interval
         std::vector<int> enemyType;
-        std::vector<std::vector<float>> enemyVelocity;
 
         //bool for detecting if enemy has rotated or not
         bool rotation;

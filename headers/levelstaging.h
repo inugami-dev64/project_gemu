@@ -13,7 +13,7 @@ class Stage {
         std::vector<float> getCircleCoordinates(float circleCentre[2], int angle, int radius);
 
         //vector pushing functions
-        void pushEnemies(stats& mainSta, std::vector<sf::Sprite>& enemyVec, std::vector<std::vector<float>>& posVec ,sf::Sprite& enemy, std::vector<float>& positions, int type);
+        void pushEnemies(stats& mainSta, std::vector<sf::Sprite>& enemyVec, std::vector<std::vector<float>>& posVec, std::vector<std::vector<float>>& velVec, sf::Sprite& enemy, std::vector<float>& positions, std::vector<float>& velocity, int type);
         void pushAttack(std::vector<sf::Sprite>& particleVec, std::vector<std::vector<float>>& posVec, std::vector<std::vector<float>>& velVec, stats& mainSta, sf::Sprite& particle, std::vector<float>& positions, std::vector<float>& velocity);
         void pushRecCore(std::vector<sf::RectangleShape>& coreVec, std::vector<std::vector<float>>& posVec, sf::RectangleShape& core, std::vector<float>& positions);
         void pushCirCore(std::vector<sf::CircleShape>& coreVec, std::vector<std::vector<float>>& posVec, sf::CircleShape& core, std::vector<float>& positions);
@@ -32,7 +32,7 @@ class Stage {
 
         //level 1 stage 3
         void initL1S3(Obj& obj, stats& mainSta, Pos& pos);
-        void L1S3attack(Obj& obj, stats& mainSta, Pos& pos, long& generationInterval, std::size_t& index);
+        void L1S3attack(Obj& obj, stats& mainSta, Pos& pos, long& generationInterval, std::size_t& index, InitPos& initPos);
 };
 
 

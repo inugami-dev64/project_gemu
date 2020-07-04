@@ -1,8 +1,7 @@
 CPPFLAGS += -I SFML/include
-
 LD_LIBRARY_PATH=SFML/lib
 
-gemu: engine.o main.o objects.o positions.o staging.o stats.o base64.o aes.o
+gemu: engine.o main.o objects.o positions.o staging.o stats.o base64.o aes.o	
 	g++ engine.o main.o objects.o positions.o staging.o stats.o base64.o aes.o -o gemu -L SFML/lib -lsfml-graphics -lsfml-window -lsfml-system
 
 engine.o: engine.cpp

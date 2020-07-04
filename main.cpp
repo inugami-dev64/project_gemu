@@ -10,9 +10,13 @@
 #include <string.h>
 #include <bits/stdc++.h> 
 
-//test xd
+#define DEBUG_PARTICLES 0
+#define DEBUG_ULTIMATE 0
+#define DEBUG_RANDOM_MOVEMENT 0
+
 bool immortal = false;
 bool ultimate = false;
+int playerMoveDiagSpeed = sqrt(pow(playerMoveSpeed, 2)/4);
 
 //timing intervals
 long playerShootInterval;
@@ -30,6 +34,7 @@ Stage stage;
 Timer ti;
 Obj obj;
 Pos pos;
+InitPos initPos;
 engine eng;
 stats mainSta;
 
@@ -40,8 +45,8 @@ std::vector<std::vector<std::vector<unsigned char>>> roundKeys = aes::expandKey(
 //Function that erases all particles that are outside of the game frame
 void cleanAssets(bool cleanEnemies) {
     //laser particles
-    for(std::size_t i = 0; i < pos.shootingParticleSet.size(); i++) 
-        if(pos.shootingParticleSet[i][1] < -100) pos.shootingParticleSet.erase(pos.shootingParticleSet.begin()+i), obj.shootingParticles.erase(obj.shootingParticles.begin()+i);
+    for(std::size_t i = 0; i < pos.shootingParticlePos.size(); i++) 
+        if(pos.shootingParticlePos[i][1] < -100) pos.shootingParticlePos.erase(pos.shootingParticlePos.begin()+i), obj.shootingParticles.erase(obj.shootingParticles.begin()+i);
     
     //balls
     for(std::size_t i = 0; i < obj.balls.size(); i++) 
@@ -66,7 +71,7 @@ void cleanAssets(bool cleanEnemies) {
     if(cleanEnemies) {
         for(std::size_t i = 0; i < obj.enemies.size(); i++)
             if(pos.enemies[i][0] > 600 || pos.enemies[i][0] < -100 || pos.enemies[i][1] > 600)
-                obj.enemies.erase(obj.enemies.begin()+i), pos.enemies.erase(pos.enemies.begin()+i), 
+                obj.enemies.erase(obj.enemies.begin()+i), pos.enemies.erase(pos.enemies.begin()+i), pos.enemyVelocity.erase(pos.enemyVelocity.begin()+i), 
                 mainSta.enemyHealth.erase(mainSta.enemyHealth.begin()+i), mainSta.exploded.erase(mainSta.exploded.begin()+i);
     }
 }
@@ -78,7 +83,7 @@ void clearStage() {
         mainSta.enemyHealth.clear();
         mainSta.exploded.clear();
         mainSta.enemyType.clear();
-        mainSta.enemyVelocity.clear();
+        pos.enemyVelocity.clear();
 }
 
 //Function that clears all particles from display
@@ -99,7 +104,7 @@ void clearParticles() {
 
     //player shooted laser particles
     obj.shootingParticles.clear();
-    pos.shootingParticleSet.clear();
+    pos.shootingParticlePos.clear();
 }
 
 //Function that explodes enemies if their health is zero
@@ -210,7 +215,7 @@ void drawDefault() {
     
     eng.drawObject(obj.stats, pos.statsPos[0], pos.statsPos[1]);
     obj.updateBars(mainSta.health, mainSta.power);
-    pos.setBarY(mainSta.health, mainSta.power);
+    initPos.updateBarY(pos, mainSta.health, mainSta.power);
     eng.drawRectangle(obj.healthbar, pos.healthBar[0], pos.healthBar[1]);
     eng.drawRectangle(obj.powerbar, pos.powerBar[0], pos.powerBar[1]);    
 }
@@ -225,14 +230,14 @@ void moveF() {
 
 //Move object front leftwards
 void moveFL() {
-    pos.starship[0]-=(playerMoveSpeed/2); pos.starship[1]-=(playerMoveSpeed/2);
-    pos.starshipCore[0]-=(playerMoveSpeed/2); pos.starshipCore[1]-=(playerMoveSpeed/2);
+    pos.starship[0]-=playerMoveDiagSpeed; pos.starship[1]-=playerMoveDiagSpeed;
+    pos.starshipCore[0]-=playerMoveDiagSpeed; pos.starshipCore[1]-=playerMoveDiagSpeed;
 }
     
 //Move object front rightwards
 void moveFR() {
-    pos.starship[0]+=(playerMoveSpeed/2); pos.starship[1]-=(playerMoveSpeed/2);
-    pos.starshipCore[0]+=(playerMoveSpeed/2); pos.starshipCore[1]-=(playerMoveSpeed/2);
+    pos.starship[0]+=playerMoveDiagSpeed; pos.starship[1]-=playerMoveDiagSpeed;
+    pos.starshipCore[0]+=playerMoveDiagSpeed; pos.starshipCore[1]-=playerMoveDiagSpeed;
 }
 
 //Move object backwards
@@ -243,14 +248,14 @@ void moveB() {
 
 //Move object backwards left
 void moveBL() {
-    pos.starship[0]-=(playerMoveSpeed/2), pos.starship[1]+=(playerMoveSpeed/2);
-    pos.starshipCore[0]-=(playerMoveSpeed/2), pos.starshipCore[1]+=(playerMoveSpeed/2);
+    pos.starship[0]-=playerMoveDiagSpeed, pos.starship[1]+=playerMoveDiagSpeed;
+    pos.starshipCore[0]-=playerMoveDiagSpeed, pos.starshipCore[1]+=playerMoveDiagSpeed;
 }
 
 //Move object backwards rightwards
 void moveBR() {
-    pos.starship[0]+=(playerMoveSpeed/2); pos.starship[1]+=(playerMoveSpeed/2);
-    pos.starshipCore[0]+=(playerMoveSpeed/2); pos.starshipCore[1]+=(playerMoveSpeed/2);
+    pos.starship[0]+=playerMoveDiagSpeed; pos.starship[1]+=playerMoveDiagSpeed;
+    pos.starshipCore[0]+=playerMoveDiagSpeed; pos.starshipCore[1]+=playerMoveDiagSpeed;
 }
 
 //Move object rightwards
@@ -272,7 +277,7 @@ void generateParticles() {
         obj.shootingParticles.push_back(obj.shooting_particle);
         obj.shootingParticles.push_back(obj.shooting_particle);
         obj.shootingParticles.push_back(obj.shooting_particle);
-        pos.initPlayerShooting();
+        initPos.initPlayerShooting(pos);
         playerShootInterval = ti.getTime();
     }
 }
@@ -282,7 +287,7 @@ void drawParticles() {
 
     //player's laser particles
     for(std::size_t i = 0; i < obj.shootingParticles.size(); i++) {
-        eng.drawObject(obj.shootingParticles[i], pos.shootingParticleSet[i][0], pos.shootingParticleSet[i][1]);
+        eng.drawObject(obj.shootingParticles[i], pos.shootingParticlePos[i][0], pos.shootingParticlePos[i][1]);
     }
 
     //enemy rhombparticles 
@@ -300,7 +305,7 @@ void drawParticles() {
 void checkShootingStyle() {
     if((mainSta.power == 100 && sf::Keyboard::isKeyPressed(sf::Keyboard::X)) || ultimate == true) {
         ultimate = true;
-        mainSta.power = 0;
+        if(!DEBUG_ULTIMATE) mainSta.power = 0;
         if(ti.getTime() - ultimateInterval < ultimateTime) {
             immortal = true;
             switch (ultStyle)
@@ -322,7 +327,8 @@ void checkShootingStyle() {
             }
         }
 
-        else ultimate = false, immortal = false;
+        else if(!DEBUG_ULTIMATE) immortal = false;
+        else ultimate = false;        
         
     }
 
@@ -332,6 +338,7 @@ void checkShootingStyle() {
 //Function that initialises game to start from stage 0
 void initZero() {
     clearStage(); 
+    ultimate = false;
     mainSta = stats();
     clearParticles();
     mainSta.level = 1;
@@ -421,7 +428,7 @@ void handleUserMovement() {
         else moveF();
 
     }
-
+    
     //backwards
     if((sf::Keyboard::isKeyPressed(sf::Keyboard::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) && pos.starship[1] < maxPosY) {
         if((sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) && pos.starship[0] > minPosX) moveBL();
@@ -505,8 +512,8 @@ void enemyDestructionGains(int index) {
             2 = big enemy
             3 = boss enemy */
 
-    if(!ultimate) mainSta.power += mainSta.powerGains[mainSta.enemyType[index]], mainSta.xp += mainSta.powerGains[mainSta.enemyType[index]]*11;
-    else mainSta.xp += mainSta.powerGains[mainSta.enemyType[index]]*11;
+    if(!ultimate) mainSta.power += mainSta.powerGains[mainSta.enemyType[index]], mainSta.xp += mainSta.powerGains[mainSta.enemyType[index]]*50;
+    else mainSta.xp += mainSta.powerGains[mainSta.enemyType[index]]*50;
 }
 
 //Function that destroys particles and gives player xp
@@ -522,7 +529,7 @@ void particleDestruction(int index, int type) {
             obj.ballCoreVector.erase(obj.ballCoreVector.begin() + index);
             pos.ballCorePos.erase(pos.ballCorePos.begin() + index);
             pos.ballPos.erase(pos.ballPos.begin() + index);
-            pos.ballVelocity.erase(pos.ballVelocity.begin()+1);
+            pos.ballVelocity.erase(pos.ballVelocity.begin()+index);
             mainSta.xp += mainSta.xpGainFromParticles;
             break;
         
@@ -677,6 +684,7 @@ int main() {
     generationInterval = ti.getTime();
     playerDamageInterval = ti.getTime();
     stage.initL1S0(obj, mainSta, pos);
+    if(DEBUG_ULTIMATE) mainSta.power = 100, std::cout << "test" << std::endl;
 
     // main loop for each frame
     while (eng.running())
@@ -689,7 +697,7 @@ int main() {
         handleUserMovement();
 
         if(!ultimate) ultimateInterval = ti.getTime();
-        pos.updatePlayer();
+        initPos.updatePlayer(pos);
         checkShootingStyle();
         drawParticles();
 
@@ -707,7 +715,7 @@ int main() {
 
                 if(ti.getTime() - stageInterval >= stageDelay && mainSta.stage == 0) {
                     obj.exp.setOrigin(0.f, 0.f);
-                    if(!pos.updateL1S0()) stage.L1S0attack(mainSta, obj, pos, generationInterval, generationIndex);
+                    if(!initPos.initL1S0(pos)) stage.L1S0attack(mainSta, obj, pos, generationInterval, generationIndex);
                     cleanAssets(false);
 
                     collisions();
@@ -720,7 +728,7 @@ int main() {
                 //stage 1
                 if(ti.getTime() - stageInterval >= stageDelay && mainSta.stage == 1) {
 
-                    if(pos.updateL1S1())
+                    if(initPos.initL1S1(pos))
                         stage.L1S1attack(mainSta, obj, pos, generationInterval);
                     cleanAssets(true);
 
@@ -736,7 +744,7 @@ int main() {
                 //stage 2
                 if(ti.getTime() - stageInterval >= stageDelay && mainSta.stage == 2) {
                     
-                    if(!pos.updateL1S2()) 
+                    if(!initPos.initL1S2(pos)) 
                         stage.L1S2attack(obj, mainSta, pos, generationInterval, generationIndex);
 
                     collisions();
@@ -753,9 +761,8 @@ int main() {
                 //stage 3
                 if(ti.getTime() - stageInterval >= stageDelay && mainSta.stage == 3) {
                     obj.exp.setOrigin(25.f, 25.f);
-                    if(!pos.initL1S3pos()) {
-                        if(!pos.updateL1S3(mainSta)) stage.L1S3attack(obj, mainSta, pos, generationInterval, generationIndex);
-                    }
+                    if(!initPos.initL1S3(pos))
+                        if(!initPos.updateL1S3(pos, mainSta)) stage.L1S3attack(obj, mainSta, pos, generationInterval, generationIndex, initPos);
 
                     collisions();
                     cleanAssets(false);
@@ -771,9 +778,9 @@ int main() {
                 eng.drawRectangle(obj.starshipCore, pos.starshipCore[0], pos.starshipCore[1]);
 
                 //nostage
-                if(ti.getTime() - stageInterval >= stageDelay && mainSta.stage == 4) {
+                if(ti.getTime() - stageInterval >= stageDelay && mainSta.stage == 4) 
                     eng.drawObject(obj.nostage, pos.nostagePos[0], pos.nostagePos[1]);
-                }
+                
                 
                 
                 break;
@@ -786,7 +793,20 @@ int main() {
         }
 
         if(ti.getTime() - xpInterval >= xpDelay) mainSta.xp++, xpInterval = ti.getTime();
-        pos.updateAttack();
+        initPos.updateAttack(pos);
+        if(DEBUG_PARTICLES) 
+           std::cout << "Balls: " + std::to_string(obj.balls.size()) + "/Core: " + std::to_string(obj.ballCoreVector.size()) + "/Vel: " + std::to_string(pos.ballVelocity.size()) + "/Pos: " + std::to_string(pos.ballPos.size()) + "/CorePos: " + std::to_string(pos.ballCorePos.size()) << std::endl;
+        
+        if(DEBUG_RANDOM_MOVEMENT) {
+            for(std::size_t i = 0; i < pos.newEnemyPos.size(); i++) {
+                std::cout << "new enemy pos: " + std::to_string(pos.newEnemyPos[i][0]) + "/" + std::to_string(pos.newEnemyPos[i][1]) << std::endl;
+                std::cout << "velocity: " + std::to_string(pos.enemyVelocity[i][0]) + "/" + std::to_string(pos.enemyVelocity[i][1]) << std::endl;
+                std::cout << "current enemy pos: " + std::to_string(pos.enemies[i][0]) + "/" + std::to_string(pos.enemies[i][1]) << std::endl;
+                std::cout << "new size: " + std::to_string(pos.newEnemyPos.size()) + "/velo size: " + std::to_string(pos.enemyVelocity.size()) + "/pos size: " + std::to_string(pos.enemies.size()) << std::endl;
+                std::cout << std::endl;
+            }
+            
+        }
         getScoreText(obj.score, pos.scorePos, mainSta.xp);
         getScoreText(obj.highScore, pos.highScorePos, highScore);
         handleEvents();

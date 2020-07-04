@@ -9,10 +9,7 @@
 
 //position class for all object positions
 class Pos
-{   
-    private:
-        void updateL1S3newPos(stats& mainSta);
-        
+{       
     public:
 
         //arr[0] is x coordinate
@@ -22,15 +19,12 @@ class Pos
         std::vector<float> starship;
         std::vector<float> starshipCore;
         std::vector<float> ultimate;
-        void initPlayerShooting();
-        std::vector<std::vector<float>> shootingParticleSet;
-        void ultimateSetDefault();
+        std::vector<std::vector<float>> shootingParticlePos;
 
 
         //player stats
         std::vector<float> healthBar;
         std::vector<float> powerBar;
-        void setBarY(int health, int power);
 
 
         //ui
@@ -48,6 +42,7 @@ class Pos
 
         //enemies
         std::vector<std::vector<float>> enemies;
+        std::vector<std::vector<float>> enemyVelocity;
 
         //enemies attack
         std::vector<std::vector<float>> ballPos;
@@ -58,25 +53,31 @@ class Pos
         std::vector<std::vector<float>> particleVelocity;
         std::vector<std::vector<float>> newEnemyPos;
 
+    Pos();
+};
+
+class InitPos
+{
+    public:
         //Function that updates assets
-        void updatePlayer();
-        void updateAttack();
+        void initPlayerShooting(Pos& pos);
+        void updateBarY(Pos& pos, int health, int power);
+        void updatePlayer(Pos& pos);
+        void updateAttack(Pos& pos);
 
         //level 1 stage 0
-        bool updateL1S0();
+        bool initL1S0(Pos& pos);
 
         //level 1 stage 1
-        bool updateL1S1();
+        bool initL1S1(Pos& pos);
 
         //level 1 stage 2
-        bool updateL1S2();
+        bool initL1S2(Pos& pos);
 
         //level 1 stage 3 
-        bool initL1S3pos();
-        bool updateL1S3(stats& mainSta);
-
-
-    Pos();
+        bool initL1S3(Pos& pos);
+        bool updateL1S3(Pos& pos, stats& mainSta);
+        void updateL1S3newPos(Pos& pos);
 };
 
 

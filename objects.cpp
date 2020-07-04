@@ -90,19 +90,19 @@ Obj::Obj() {
     this->shurikenEnemy.setTexture(shurikenEnemyTex);
 
     //enemies attack
+    //Balls
     this->fireballAttack.setTexture(fireballAttackTex);
     this->neonballAttack.setTexture(neonballAttackTex);
     this->rubyballAttack.setTexture(rubyballAttackTex);
     this->ballCore.setSize(sf::Vector2f(5, 5));
-    this->ballCore.setFillColor(sf::Color(255, 255, 255, 0));
+    this->ballCore.setFillColor(sf::Color(0, 0, 0, 0));
 
+    //Rhombs
     this->blueParticleAttack.setTexture(blueParticleAttackTex);
     this->purpleParticleAttack.setTexture(purpleParticleAttackTex);
     this->goldParticleAttack.setTexture(goldParticleAttackTex);
     this->particleCore.setRadius(3.f);
     this->particleCore.setFillColor(sf::Color(255, 255, 255, 0));
-
-    //explosions
 
 }
 

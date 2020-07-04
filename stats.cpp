@@ -15,7 +15,7 @@ stats::stats() {
     powerGains.push_back(8); //big
     powerGains.push_back(50);
 
-    xpGainFromParticles = 4;  
+    xpGainFromParticles = 15;  
 
     //enemy stats
     enemyFullHealth.reserve(3);

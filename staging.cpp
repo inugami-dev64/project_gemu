@@ -29,7 +29,7 @@ std::vector<float> Stage::getCircleCoordinates(float circleCentre[2], int angle,
 }
 
 //Function that pushes enemies to their vectors
-void Stage::pushEnemies(stats& mainSta, std::vector<sf::Sprite>& enemyVec, std::vector<std::vector<float>>& posVec ,sf::Sprite& enemy, std::vector<float>& positions, int type) {
+void Stage::pushEnemies(stats& mainSta, std::vector<sf::Sprite>& enemyVec, std::vector<std::vector<float>>& posVec, std::vector<std::vector<float>>& velVec, sf::Sprite& enemy, std::vector<float>& positions, std::vector<float>& velocity, int type) {
     std::vector<long> expl(3);
     expl[0] = false;
     expl[1] = 1;
@@ -37,6 +37,7 @@ void Stage::pushEnemies(stats& mainSta, std::vector<sf::Sprite>& enemyVec, std::
     
     enemyVec.push_back(enemy);
     posVec.push_back(positions);
+    velVec.push_back(velocity);
     mainSta.exploded.push_back(expl);
     mainSta.enemyType.push_back(type);
     mainSta.enemyHealth.push_back(mainSta.enemyFullHealth[type]);
@@ -65,23 +66,27 @@ void Stage::pushCirCore(std::vector<sf::CircleShape>& coreVec, std::vector<std::
 void Stage::initL1S0(Obj& obj, stats& mainSta, Pos& pos) {
 
     std::vector<float> temp(2);
+    std::vector<float> vel(2);
+
     temp[0] = -150, temp[1] = 100;
-    pushEnemies(mainSta, obj.enemies, pos.enemies, obj.smallEnemy, temp, 0);
+    vel[0] = enemyMoveSpeed, vel[1] = 0;
+    pushEnemies(mainSta, obj.enemies, pos.enemies, pos.enemyVelocity, obj.smallEnemy, temp, vel, 0);
 
     temp[0] = -100, temp[1] = 50;
-    pushEnemies(mainSta, obj.enemies, pos.enemies, obj.smallEnemy, temp, 0);
+    pushEnemies(mainSta, obj.enemies, pos.enemies, pos.enemyVelocity, obj.smallEnemy, temp, vel, 0);
 
     temp[0] = -50, temp[1] = 0;
-    pushEnemies(mainSta, obj.enemies, pos.enemies, obj.smallEnemy, temp, 0);
+    pushEnemies(mainSta, obj.enemies, pos.enemies, pos.enemyVelocity, obj.smallEnemy, temp, vel, 0);
 
     temp[0] = 900, temp[1] = 100;
-    pushEnemies(mainSta, obj.enemies, pos.enemies, obj.smallEnemy, temp, 0);
+    vel[0] = -enemyMoveSpeed, vel[1] = 0;
+    pushEnemies(mainSta, obj.enemies, pos.enemies, pos.enemyVelocity, obj.smallEnemy, temp, vel, 0);
 
     temp[0] = 850, temp[1] = 50;
-    pushEnemies(mainSta, obj.enemies, pos.enemies, obj.smallEnemy, temp, 0);
+    pushEnemies(mainSta, obj.enemies, pos.enemies, pos.enemyVelocity, obj.smallEnemy, temp, vel, 0);
 
     temp[0] = 800, temp[1] = 0;
-    pushEnemies(mainSta, obj.enemies, pos.enemies, obj.smallEnemy, temp, 0);  
+    pushEnemies(mainSta, obj.enemies, pos.enemies, pos.enemyVelocity, obj.smallEnemy, temp, vel, 0); 
 }
 
 //Function that generates enemies' fireballs
@@ -115,20 +120,23 @@ void Stage::L1S0attack(stats& mainSta, Obj& obj, Pos& pos, long& generationInter
 void Stage::initL1S1(Obj& obj, stats& mainSta, Pos& pos) {
 
     //left side enemies
-    int enemyAmount = 150;
+    int enemyAmount = 80;
+
+    std::vector<float> vel(2);
+    vel[0] = 0, vel[1] = enemyMoveSpeed;
 
     //left enemies
     for(int i = 0; i < enemyAmount/2; i++) {
         std::vector<float> temp(2);
         temp[0] = 250, temp[1] = -((i + 1) * 50);
-        pushEnemies(mainSta, obj.enemies, pos.enemies, obj.smallEnemy, temp, 0); 
+        pushEnemies(mainSta, obj.enemies, pos.enemies, pos.enemyVelocity ,obj.smallEnemy, temp, vel,0); 
     }
 
     //right side enemies
     for(int i = enemyAmount/2, y = 0; i < enemyAmount; i++, y++) {
         std::vector<float> temp(2);
         temp[0] = 300, temp[1] = -((y + 1)* 50);
-        pushEnemies(mainSta, obj.enemies, pos.enemies, obj.smallEnemy, temp, 0); 
+        pushEnemies(mainSta, obj.enemies, pos.enemies, pos.enemyVelocity, obj.smallEnemy, temp, vel, 0); 
     }
     
 }
@@ -163,16 +171,19 @@ void Stage::L1S1attack(stats& mainSta, Obj& obj, Pos& pos, long& generationInter
 
 void Stage::initL1S2(Obj& obj, stats& mainSta, Pos& pos) {
     std::vector<float> temp(2);
-
+    std::vector<float> vel(2);
 
     temp[0] = -100, temp[1] = -100;
-    pushEnemies(mainSta, obj.enemies, pos.enemies, obj.mediumEnemy, temp, 1); 
+    vel[0] = enemyMoveSpeed + 2; vel[1] = enemyMoveSpeed + 2;
+    pushEnemies(mainSta, obj.enemies, pos.enemies, pos.enemyVelocity, obj.mediumEnemy, temp, vel, 1); 
 
     temp[0] = 275, temp[1] = -100;
-    pushEnemies(mainSta, obj.enemies, pos.enemies, obj.mediumEnemy, temp, 1); 
+    vel[0] = 0;
+    pushEnemies(mainSta, obj.enemies, pos.enemies, pos.enemyVelocity, obj.mediumEnemy, temp, vel, 1); 
 
     temp[0] = 700, temp[1] = -150;
-    pushEnemies(mainSta, obj.enemies, pos.enemies, obj.mediumEnemy, temp, 1); 
+    vel[0] = -(enemyMoveSpeed + 2), vel[1] = enemyMoveSpeed + 2;
+    pushEnemies(mainSta, obj.enemies, pos.enemies, pos.enemyVelocity, obj.mediumEnemy, temp, vel, 1); 
 
 }
 
@@ -263,17 +274,20 @@ void Stage::L1S2attack(Obj& obj, stats& mainSta, Pos& pos, long& generationInter
 
 void Stage::initL1S3(Obj& obj, stats& mainSta, Pos& pos) {
     std::vector<float> temp(2);
+    std::vector<float> vel(2);
 
     temp[0] = -100, temp[1] = 100;
-    pushEnemies(mainSta, obj.enemies, pos.enemies, obj.shurikenEnemy, temp, 1); 
+    vel[0] = enemyMoveSpeed, vel[1] = 0;
+    pushEnemies(mainSta, obj.enemies, pos.enemies, pos.enemyVelocity, obj.shurikenEnemy, temp, vel, 1); 
 
     temp[0] = 700, temp[1] = 100;
-    pushEnemies(mainSta, obj.enemies, pos.enemies, obj.shurikenEnemy, temp, 1);
+    vel[0] = -enemyMoveSpeed;
+    pushEnemies(mainSta, obj.enemies, pos.enemies, pos.enemyVelocity, obj.shurikenEnemy, temp, vel, 1); 
 
     for(std::size_t i = 0; i < obj.enemies.size(); i++) obj.enemies[i].setOrigin(25.f, 25.f);
 }
 
-void Stage::L1S3attack(Obj& obj, stats& mainSta, Pos& pos, long& generationInterval, std::size_t& index) {
+void Stage::L1S3attack(Obj& obj, stats& mainSta, Pos& pos, long& generationInterval, std::size_t& index, InitPos& initPos) {
     mainSta.rotation = false;
     obj.enemies[0].setRotation(rotation);
     obj.enemies[1].setRotation(rotation);
@@ -311,6 +325,7 @@ void Stage::L1S3attack(Obj& obj, stats& mainSta, Pos& pos, long& generationInter
     if(rotation < 360) rotation += enemyRotationSpeed, mainSta.rotation = false;
     else {
         rotation = 0, mainSta.rotation = true; 
+        initPos.updateL1S3newPos(pos);
         if(index == 1 && mainSta.enemyHealth[0] > 0) index=0; 
         else if(index == 0 && mainSta.enemyHealth[1] > 0) index++;
     }
