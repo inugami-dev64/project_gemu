@@ -14,7 +14,7 @@
 #define DEBUG_ULTIMATE 0
 #define DEBUG_ENEMIES 0
 #define DEBUG_STAGES 0
-#define DEBUG_RANDOM_MOVEMENT 1
+#define DEBUG_RANDOM_MOVEMENT 0
 
 bool immortal = false;
 bool ultimate = false;
