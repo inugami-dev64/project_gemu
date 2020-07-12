@@ -2,6 +2,7 @@
 #define MAIN_H
 #define PI 3.14159265
 #include <string>
+#include <math.h>
 
 //player space in game
 #define minPosX 0
@@ -20,10 +21,7 @@
 #define playerMoveSpeed 7.5
 #define laserParticleSpeed 20
 #define laserParticleDamage 2
-#define particleSpeed 3 //pixels per frame
-#define enemyMoveSpeed 3.3
-#define enemyRotationSpeed 3 //degrees per frame
-#define enemyRotationAttackFrq 12 //times in 360 degrees
+
 
 //delays ms
 #define damageDelay 500 
@@ -31,8 +29,9 @@
 #define ballSingleAttackDelay 200
 #define ballMultiAttackDelay 800
 #define ballFlowerAttackDelay 55
+#define burstAttackDelay 250
 #define xpDelay 300
-#define particleRingDelay 500
+#define particleRingDelay 800
 #define stageDelay 500
 #define ultimateTime 5000
 #define explosionEffectDelay 17

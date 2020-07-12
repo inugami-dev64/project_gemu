@@ -1,6 +1,6 @@
 #include "headers/stats.h"
 
-stats::stats() {
+Stats::Stats() {
     //player stats
     health = 100;
     power = 0;
@@ -22,5 +22,8 @@ stats::stats() {
     enemyFullHealth.push_back(50); //small
     enemyFullHealth.push_back(300); //medium
     enemyFullHealth.push_back(900); //big
+    particleSpeed = 3;
+    enemySpeed = 3.3;
+    enemyRotationSpeed = 4;
     
 }

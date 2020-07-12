@@ -110,7 +110,7 @@ class Obj
         sf::Texture exp14Tex;
         sf::Texture exp15Tex;
         sf::Texture exp16Tex;
-        sf::Sprite exp;
+        sf::Sprite explosion;
         
 
     Obj();

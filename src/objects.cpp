@@ -75,7 +75,7 @@ Obj::Obj() {
 
     //player
     this->starship.setTexture(starshipTex);
-    this->starshipCore.setSize(sf::Vector2f(20, 20));
+    this->starshipCore.setSize(sf::Vector2f(15, 15));
     this->starshipCore.setFillColor(sf::Color(255, 255, 255, 0));
     this->ultimate1.setTexture(ultimate1Tex);
     this->ultimate2.setTexture(ultimate2Tex);
@@ -103,7 +103,6 @@ Obj::Obj() {
     this->goldParticleAttack.setTexture(goldParticleAttackTex);
     this->particleCore.setRadius(3.f);
     this->particleCore.setFillColor(sf::Color(255, 255, 255, 0));
-
 }
 
 //Function that updates healthbar and powerbar stats to display

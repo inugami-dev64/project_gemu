@@ -200,8 +200,10 @@ namespace aes {
             for(int ii = 0; ii < 4; ii++) {
                 for(int iii = 0; iii < 4; iii++, y++) {
 
-                    if(y < sizeof(tmp) / sizeof(*tmp)) blockMes[i][ii][iii] = tmp[y];
-                    else blockMes[i][ii][iii] = 0;
+                    if(y < sizeof(tmp) / sizeof(*tmp))
+                        blockMes[i][ii][iii] = tmp[y];
+                    else 
+                        blockMes[i][ii][iii] = 0;
                     
                 }
             }

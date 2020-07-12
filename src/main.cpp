@@ -1,6 +1,6 @@
 #include "headers/main.h"
 #include "headers/levelstaging.h"
-#include "aes128cbc/aes.h"
+#include "../aes128cbc/aes.h"
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
@@ -12,11 +12,12 @@
 
 #define DEBUG_PARTICLES 0
 #define DEBUG_ULTIMATE 0
-#define DEBUG_RANDOM_MOVEMENT 0
+#define DEBUG_ENEMIES 0
+#define DEBUG_STAGES 0
+#define DEBUG_RANDOM_MOVEMENT 1
 
 bool immortal = false;
 bool ultimate = false;
-int playerMoveDiagSpeed = sqrt(pow(playerMoveSpeed, 2)/4);
 
 //timing intervals
 long playerShootInterval;
@@ -26,173 +27,110 @@ long generationInterval;
 long stageInterval;
 long playerDamageInterval;
 long ultimateInterval;
+float playerMoveDiagSpeed = sqrt(pow(playerMoveSpeed, 2)/4);
 
 int ultStyle = 1;
 std::size_t generationIndex = 0;
 
-Stage stage;
-Timer ti;
+Levels lvls;
+ManageVectors manage;
+Calc calc;
 Obj obj;
 Pos pos;
-InitPos initPos;
+StagePos stagePos;
+Move move;
 engine eng;
-stats mainSta;
+Stats mainSta;
 
 //roundkey vector
 std::vector<std::vector<std::vector<unsigned char>>> roundKeys = aes::expandKey(cryptKey);
 
-
-//Function that erases all particles that are outside of the game frame
-void cleanAssets(bool cleanEnemies) {
-    //laser particles
-    for(std::size_t i = 0; i < pos.shootingParticlePos.size(); i++) 
-        if(pos.shootingParticlePos[i][1] < -100) pos.shootingParticlePos.erase(pos.shootingParticlePos.begin()+i), obj.shootingParticles.erase(obj.shootingParticles.begin()+i);
-    
-    //balls
-    for(std::size_t i = 0; i < obj.balls.size(); i++) 
-        if(pos.ballPos[i][1] > 610 || pos.ballPos[i][1] < -10 || pos.ballPos[i][0] < -10 || pos.ballPos[i][0] > 610) {
-            pos.ballPos.erase(pos.ballPos.begin() +i);
-            obj.balls.erase(obj.balls.begin()+i);
-            pos.ballCorePos.erase(pos.ballCorePos.begin()+i);
-            obj.ballCoreVector.erase(obj.ballCoreVector.begin() + i); 
-            pos.ballVelocity.erase(pos.ballVelocity.begin()+i);
-        }
-
-    //rhomb attack particles
-    for(std::size_t i = 0; i < obj.rhombParticles.size(); i++) 
-        if(pos.particlePos[i][0] < -10 || pos.particlePos[i][0] > 610 || pos.particlePos[i][1] < -10 || pos.particlePos[i][1] > 610)
-            pos.particlePos.erase(pos.particlePos.begin()+i),
-            pos.particleCorePos.erase(pos.particleCorePos.begin()+i),
-            obj.rhombParticles.erase(obj.rhombParticles.begin()+i),
-            obj.particleCoreVector.erase(obj.particleCoreVector.begin()+i),
-            pos.particleVelocity.erase(pos.particleVelocity.begin()+i);
-    
-    //enemies 
-    if(cleanEnemies) {
-        for(std::size_t i = 0; i < obj.enemies.size(); i++)
-            if(pos.enemies[i][0] > 600 || pos.enemies[i][0] < -100 || pos.enemies[i][1] > 600)
-                obj.enemies.erase(obj.enemies.begin()+i), pos.enemies.erase(pos.enemies.begin()+i), pos.enemyVelocity.erase(pos.enemyVelocity.begin()+i), 
-                mainSta.enemyHealth.erase(mainSta.enemyHealth.begin()+i), mainSta.exploded.erase(mainSta.exploded.begin()+i);
-    }
-}
-
-//Function that clears the stage from all enemies
-void clearStage() {
-        obj.enemies.clear(); 
-        pos.enemies.clear();
-        mainSta.enemyHealth.clear();
-        mainSta.exploded.clear();
-        mainSta.enemyType.clear();
-        pos.enemyVelocity.clear();
-}
-
-//Function that clears all particles from display
-void clearParticles() {
-    //balls
-    obj.balls.clear();
-    obj.ballCoreVector.clear();
-    pos.ballPos.clear();
-    pos.ballCorePos.clear();
-    pos.ballVelocity.clear();
-
-    //rhomb particles
-    obj.rhombParticles.clear();
-    obj.particleCoreVector.clear();
-    pos.particlePos.clear();
-    pos.particleCorePos.clear();
-    pos.particleVelocity.clear();
-
-    //player shooted laser particles
-    obj.shootingParticles.clear();
-    pos.shootingParticlePos.clear();
-}
-
 //Function that explodes enemies if their health is zero
 void explode(int index) {
-    if(ti.getTime() - mainSta.exploded[index][2] >= explosionEffectDelay) {
+    if(calc.getTime() - mainSta.exploded[index][2] >= explosionEffectDelay) {
         mainSta.exploded[index][1]++;
-        mainSta.exploded[index][2] = ti.getTime();
+        mainSta.exploded[index][2] = calc.getTime();
     }
     switch (mainSta.exploded[index][1])
     {
     case 1:
-        obj.exp.setTexture(obj.exp1Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp1Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 2:
-        obj.exp.setTexture(obj.exp2Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp2Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 3:
-        obj.exp.setTexture(obj.exp3Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp3Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
         
     case 4:
-        obj.exp.setTexture(obj.exp4Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp4Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 5:
-        obj.exp.setTexture(obj.exp5Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp5Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 6:
-        obj.exp.setTexture(obj.exp6Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp6Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 7:
-        obj.exp.setTexture(obj.exp7Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp7Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 8:
-        obj.exp.setTexture(obj.exp8Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp8Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 9:
-        obj.exp.setTexture(obj.exp9Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp9Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 10:
-        obj.exp.setTexture(obj.exp10Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp10Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 11:
-        obj.exp.setTexture(obj.exp11Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp11Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 12:
-        obj.exp.setTexture(obj.exp12Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp12Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 13:
-        obj.exp.setTexture(obj.exp13Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp13Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 14:
-        obj.exp.setTexture(obj.exp14Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp14Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 15:
-        obj.exp.setTexture(obj.exp15Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp15Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
 
     case 16:
-        obj.exp.setTexture(obj.exp16Tex);
-        eng.drawObject(obj.exp, pos.enemies[index][0], pos.enemies[index][1]);
+        obj.explosion.setTexture(obj.exp16Tex);
+        eng.drawObject(obj.explosion, pos.enemies[index][0], pos.enemies[index][1]);
         break;
         
     case 17:
@@ -209,76 +147,24 @@ void drawDefault() {
     for(std::size_t i = 0; i < obj.enemies.size(); i++) {
         if(mainSta.enemyHealth[i] > 0) eng.drawObject(obj.enemies[i], pos.enemies[i][0], pos.enemies[i][1]);
         else if(!mainSta.exploded[i][0]) explode(i);
-        
-        
     }
     
     eng.drawObject(obj.stats, pos.statsPos[0], pos.statsPos[1]);
     obj.updateBars(mainSta.health, mainSta.power);
-    initPos.updateBarY(pos, mainSta.health, mainSta.power);
+    move.update(pos, mainSta);
     eng.drawRectangle(obj.healthbar, pos.healthBar[0], pos.healthBar[1]);
     eng.drawRectangle(obj.powerbar, pos.powerBar[0], pos.powerBar[1]);    
 }
 
-/* movement funnctions */
-
-//Move object forward
-void moveF() {
-    pos.starship[1]-=playerMoveSpeed;
-    pos.starshipCore[1]-=playerMoveSpeed;
-}
-
-//Move object front leftwards
-void moveFL() {
-    pos.starship[0]-=playerMoveDiagSpeed; pos.starship[1]-=playerMoveDiagSpeed;
-    pos.starshipCore[0]-=playerMoveDiagSpeed; pos.starshipCore[1]-=playerMoveDiagSpeed;
-}
-    
-//Move object front rightwards
-void moveFR() {
-    pos.starship[0]+=playerMoveDiagSpeed; pos.starship[1]-=playerMoveDiagSpeed;
-    pos.starshipCore[0]+=playerMoveDiagSpeed; pos.starshipCore[1]-=playerMoveDiagSpeed;
-}
-
-//Move object backwards
-void moveB() {
-    pos.starship[1]+=playerMoveSpeed;
-    pos.starshipCore[1]+=playerMoveSpeed;
-}
-
-//Move object backwards left
-void moveBL() {
-    pos.starship[0]-=playerMoveDiagSpeed, pos.starship[1]+=playerMoveDiagSpeed;
-    pos.starshipCore[0]-=playerMoveDiagSpeed, pos.starshipCore[1]+=playerMoveDiagSpeed;
-}
-
-//Move object backwards rightwards
-void moveBR() {
-    pos.starship[0]+=playerMoveDiagSpeed; pos.starship[1]+=playerMoveDiagSpeed;
-    pos.starshipCore[0]+=playerMoveDiagSpeed; pos.starshipCore[1]+=playerMoveDiagSpeed;
-}
-
-//Move object rightwards
-void moveR() {
-    pos.starship[0]+=playerMoveSpeed;
-    pos.starshipCore[0]+=playerMoveSpeed;
-}
-
-//Move object leftwards
-void moveL() {
-    pos.starship[0]-=playerMoveSpeed;
-    pos.starshipCore[0]-=playerMoveSpeed;
-}
-
 //Function that draws new particles for shooting
 void generateParticles() {
-    if(ti.getTime() - playerShootInterval >= playerShootDelay) {
+    if(calc.getTime() - playerShootInterval >= playerShootDelay) {
         obj.shootingParticles.push_back(obj.shooting_particle);
         obj.shootingParticles.push_back(obj.shooting_particle);
         obj.shootingParticles.push_back(obj.shooting_particle);
         obj.shootingParticles.push_back(obj.shooting_particle);
-        initPos.initPlayerShooting(pos);
-        playerShootInterval = ti.getTime();
+        move.setPlayerShooting(pos);
+        playerShootInterval = calc.getTime();
     }
 }
 
@@ -306,7 +192,7 @@ void checkShootingStyle() {
     if((mainSta.power == 100 && sf::Keyboard::isKeyPressed(sf::Keyboard::X)) || ultimate == true) {
         ultimate = true;
         if(!DEBUG_ULTIMATE) mainSta.power = 0;
-        if(ti.getTime() - ultimateInterval < ultimateTime) {
+        if(calc.getTime() - ultimateInterval < ultimateTime) {
             immortal = true;
             switch (ultStyle)
             {
@@ -327,7 +213,7 @@ void checkShootingStyle() {
             }
         }
 
-        else if(!DEBUG_ULTIMATE) immortal = false;
+        else if(!DEBUG_ULTIMATE) immortal = false, ultimate = false;
         else ultimate = false;        
         
     }
@@ -337,16 +223,21 @@ void checkShootingStyle() {
 
 //Function that initialises game to start from stage 0
 void initZero() {
-    clearStage(); 
+    manage.clearStage(pos, obj, mainSta); 
     ultimate = false;
-    mainSta = stats();
-    clearParticles();
+    mainSta = Stats();
+    manage.clearParticles(pos, obj);
     mainSta.level = 1;
     mainSta.stage = 0;
     pos.backgroundPos[0] = 0;
     pos.backgroundPos[1] = -5400;
-    stage.initL1S0(obj, mainSta, pos);
-    stageInterval = ti.getTime(); 
+    lvls.lvlOne.initLvl(obj, mainSta, pos, calc);
+    stageInterval = calc.getTime(); 
+    playerShootInterval = calc.getTime();
+    xpInterval = calc.getTime();
+    ballShootInterval = calc.getTime();
+    generationInterval = calc.getTime();
+    playerDamageInterval = calc.getTime();
 }
 
 //Function that checks if GAMEDATA file exists
@@ -394,11 +285,11 @@ void deadScreen() {
 
             if(eng.getEvent() == sf::Event::KeyPressed && (eng.getKey() == sf::Keyboard::D || eng.getKey() == sf::Keyboard::Right)) {
                 if(selX > pos.menuselector[0]) selX -= pos.nextSel[0];
-                else selX+=pos.nextSel[0];
+                else selX += pos.nextSel[0];
             }
             else if(eng.getEvent() == sf::Event::KeyPressed && (eng.getKey() == sf::Keyboard::A || eng.getKey() == sf::Keyboard::Left)) {
                 if(selX > pos.menuselector[0]) selX-=pos.nextSel[0];
-                else selX+=pos.nextSel[0];
+                else selX += pos.nextSel[0];
                 
             }
 
@@ -419,38 +310,6 @@ void deadScreen() {
     
 }
 
-//Function that checks for user movement
-void handleUserMovement() {
-    //forward
-    if((sf::Keyboard::isKeyPressed(sf::Keyboard::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) && pos.starship[1] > minPosY) {
-        if((sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) && pos.starship[0] > minPosX) moveFL();
-        else if((sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) && pos.starship[0] < maxPosX) moveFR();
-        else moveF();
-
-    }
-    
-    //backwards
-    if((sf::Keyboard::isKeyPressed(sf::Keyboard::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) && pos.starship[1] < maxPosY) {
-        if((sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) && pos.starship[0] > minPosX) moveBL();
-        else if((sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) && pos.starship[0] < maxPosX) moveBR();
-        else moveB();
-    }
-
-    //rightwards
-    if((sf::Keyboard::isKeyPressed(sf::Keyboard::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Right)) && pos.starship[0] < maxPosX) {
-        if((sf::Keyboard::isKeyPressed(sf::Keyboard::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) && pos.starship[1] > minPosY) moveFR();
-        else if((sf::Keyboard::isKeyPressed(sf::Keyboard::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) && pos.starship[1] < maxPosY) moveBR();
-        else moveR();
-    }
-
-    //leftwards
-    if((sf::Keyboard::isKeyPressed(sf::Keyboard::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Left)) && pos.starship[0] > minPosX) {
-        if((sf::Keyboard::isKeyPressed(sf::Keyboard::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Up)) && pos.starship[1] > minPosY) moveFL();
-        else if((sf::Keyboard::isKeyPressed(sf::Keyboard::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Down)) && pos.starship[1] < maxPosY) moveBL();
-        else moveL();
-    }
-}
-
 //Function that handles all kind of events
 void handleEvents() {
     while (eng.pollevent()) {
@@ -467,7 +326,7 @@ void handleEvents() {
                     if(eng.getEvent() == sf::Event::Closed) eng.close();
 
 
-                    /* pause menu contains
+                    /*  pause menu contains
                         resume
                         restart
                         quit */
@@ -560,19 +419,19 @@ void collisions() {
 
     //player collision with balls
     for(sf::RectangleShape rec : obj.ballCoreVector) {
-        if(eng.collisionRec(rec, obj.starshipCore, true) && ti.getTime() - playerDamageInterval >= damageDelay) {
+        if(eng.collisionRec(rec, obj.starshipCore, true) && calc.getTime() - playerDamageInterval >= damageDelay) {
             if(!immortal) mainSta.health -= ballDamage;
             if(mainSta.health < 0) mainSta.health = 0; 
-            playerDamageInterval = ti.getTime();
+            playerDamageInterval = calc.getTime();
         }
     }
 
     //player collision with rhomb particles
     for(std::size_t i = 0; i < obj.rhombParticles.size(); i++) {
-        if(eng.collisionCirRec(obj.starshipCore, obj.particleCoreVector[i]) && ti.getTime() - playerDamageInterval >= damageDelay) {
+        if(eng.collisionCirRec(obj.starshipCore, obj.particleCoreVector[i]) && calc.getTime() - playerDamageInterval >= damageDelay) {
             if(!immortal) mainSta.health -= particleDamage;
             if(mainSta.health < 0) mainSta.health = 0; 
-            playerDamageInterval = ti.getTime();
+            playerDamageInterval = calc.getTime();
         }
     }
 
@@ -622,11 +481,11 @@ void mainMenu() {
 
             if(eng.getEvent() == sf::Event::KeyPressed && (eng.getKey() == sf::Keyboard::S || eng.getKey() == sf::Keyboard::Down)) {
                 if(selY > pos.menuselector[1]) selY -= pos.nextSel[1];
-                else selY+=pos.nextSel[1];
+                else selY += pos.nextSel[1];
             }
             else if(eng.getEvent() == sf::Event::KeyPressed && (eng.getKey() == sf::Keyboard::W || eng.getKey() == sf::Keyboard::Up)) {
                 if(selY == pos.menuselector[1]) selY+=pos.nextSel[1];
-                else selY-=pos.nextSel[1];
+                else selY -= pos.nextSel[1];
                 
             }
 
@@ -677,14 +536,7 @@ int getHighScore() {
 int main() {
     if(!is_gamedata()) makeScoreData();
     int highScore = getHighScore();
-
-    playerShootInterval = ti.getTime();
-    xpInterval = ti.getTime();
-    ballShootInterval = ti.getTime();
-    generationInterval = ti.getTime();
-    playerDamageInterval = ti.getTime();
-    stage.initL1S0(obj, mainSta, pos);
-    if(DEBUG_ULTIMATE) mainSta.power = 100, std::cout << "test" << std::endl;
+    if(DEBUG_ULTIMATE) mainSta.power = 100;
 
     // main loop for each frame
     while (eng.running())
@@ -694,10 +546,9 @@ int main() {
         eng.clear();
         eng.drawObject(obj.background1, pos.backgroundPos[0], pos.backgroundPos[1]);
 
-        handleUserMovement();
+        move.handleMovement(pos, playerMoveDiagSpeed);
 
-        if(!ultimate) ultimateInterval = ti.getTime();
-        initPos.updatePlayer(pos);
+        if(!ultimate) ultimateInterval = calc.getTime();
         checkShootingStyle();
         drawParticles();
 
@@ -711,78 +562,7 @@ int main() {
 
             //level 1
             case 1:
-                //stage 0
-
-                if(ti.getTime() - stageInterval >= stageDelay && mainSta.stage == 0) {
-                    obj.exp.setOrigin(0.f, 0.f);
-                    if(!initPos.initL1S0(pos)) stage.L1S0attack(mainSta, obj, pos, generationInterval, generationIndex);
-                    cleanAssets(false);
-
-                    collisions();
-                    bool nextStage = true;
-                    for(std::size_t i = 0; i < mainSta.enemyHealth.size(); i++) if(mainSta.enemyHealth[i] > 0 || !mainSta.exploded[i][0]) nextStage = false; 
-
-                    if(nextStage) mainSta.stage++, stageInterval = ti.getTime(), clearStage(), stage.initL1S1(obj, mainSta, pos), generationIndex = 0;
-                }
-
-                //stage 1
-                if(ti.getTime() - stageInterval >= stageDelay && mainSta.stage == 1) {
-
-                    if(initPos.initL1S1(pos))
-                        stage.L1S1attack(mainSta, obj, pos, generationInterval);
-                    cleanAssets(true);
-
-                    collisions();
-                    bool nextStage = true;
-                    for(std::size_t i = 0; i < mainSta.enemyHealth.size(); i++) 
-                        if(mainSta.enemyHealth[i] > 0 || !mainSta.exploded[i][0]) nextStage = false; 
-
-                    if(nextStage) mainSta.stage++, stageInterval = ti.getTime(), clearStage(), stage.initL1S2(obj, mainSta, pos), generationIndex = 0;
-                    
-                }
-
-                //stage 2
-                if(ti.getTime() - stageInterval >= stageDelay && mainSta.stage == 2) {
-                    
-                    if(!initPos.initL1S2(pos)) 
-                        stage.L1S2attack(obj, mainSta, pos, generationInterval, generationIndex);
-
-                    collisions();
-
-                    cleanAssets(false);
-
-                    bool nextStage = true;
-                    for(std::size_t i = 0; i < mainSta.enemyHealth.size(); i++) if(mainSta.enemyHealth[i] > 0 || !mainSta.exploded[i][0]) nextStage = false; 
-
-                    if(nextStage) mainSta.stage++, stageInterval = ti.getTime(), clearStage(), stage.initL1S3(obj, mainSta, pos), generationIndex = 0;
-                    
-                } 
-
-                //stage 3
-                if(ti.getTime() - stageInterval >= stageDelay && mainSta.stage == 3) {
-                    obj.exp.setOrigin(25.f, 25.f);
-                    if(!initPos.initL1S3(pos))
-                        if(!initPos.updateL1S3(pos, mainSta)) stage.L1S3attack(obj, mainSta, pos, generationInterval, generationIndex, initPos);
-
-                    collisions();
-                    cleanAssets(false);
-
-                    bool nextStage = true;
-                    for(std::size_t i = 0; i < mainSta.enemyHealth.size(); i++) if(mainSta.enemyHealth[i] > 0 || !mainSta.exploded[i][0]) nextStage = false; 
-
-                    if(nextStage) mainSta.stage++, stageInterval = ti.getTime(), clearStage(), generationIndex = 0;
-                }
-
-                drawDefault();
-                eng.drawObject(obj.starship, pos.starship[0], pos.starship[1]);
-                eng.drawRectangle(obj.starshipCore, pos.starshipCore[0], pos.starshipCore[1]);
-
-                //nostage
-                if(ti.getTime() - stageInterval >= stageDelay && mainSta.stage == 4) 
-                    eng.drawObject(obj.nostage, pos.nostagePos[0], pos.nostagePos[1]);
-                
-                
-                
+                lvls.lvlOne.handleLvl(obj, mainSta, pos, calc, stagePos, generationInterval, stageInterval, generationIndex);
                 break;
 
             case 2:
@@ -792,11 +572,20 @@ int main() {
                 break;
         }
 
-        if(ti.getTime() - xpInterval >= xpDelay) mainSta.xp++, xpInterval = ti.getTime();
-        initPos.updateAttack(pos);
+        collisions();
+        drawDefault();
+        eng.drawObject(obj.starship, pos.starship[0], pos.starship[1]);
+        eng.drawRectangle(obj.starshipCore, pos.starshipCore[0], pos.starshipCore[1]);
+
+        if(calc.getTime() - xpInterval >= xpDelay) mainSta.xp++, xpInterval = calc.getTime();
         if(DEBUG_PARTICLES) 
            std::cout << "Balls: " + std::to_string(obj.balls.size()) + "/Core: " + std::to_string(obj.ballCoreVector.size()) + "/Vel: " + std::to_string(pos.ballVelocity.size()) + "/Pos: " + std::to_string(pos.ballPos.size()) + "/CorePos: " + std::to_string(pos.ballCorePos.size()) << std::endl;
         
+        if(DEBUG_ENEMIES)
+            std::cout << "Enemies: " + std::to_string(obj.enemies.size()) + "/Vel: " + std::to_string(pos.enemyVelocity.size()) + "/Pos: " + std::to_string(pos.enemies.size()) + "/CorePos: " << std::endl;
+
+        if(DEBUG_STAGES)
+            std::cout << "Stage: " + std::to_string(mainSta.stage) << std::endl;
         if(DEBUG_RANDOM_MOVEMENT) {
             for(std::size_t i = 0; i < pos.newEnemyPos.size(); i++) {
                 std::cout << "new enemy pos: " + std::to_string(pos.newEnemyPos[i][0]) + "/" + std::to_string(pos.newEnemyPos[i][1]) << std::endl;

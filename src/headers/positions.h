@@ -2,7 +2,6 @@
 #define POSITIONS_H
 #include "main.h"
 #include "gameobjects.h"
-#include "engine.h"
 #include <vector>
 
 
@@ -56,28 +55,36 @@ class Pos
     Pos();
 };
 
-class InitPos
+class Move
 {
     public:
         //Function that updates assets
-        void initPlayerShooting(Pos& pos);
-        void updateBarY(Pos& pos, int health, int power);
-        void updatePlayer(Pos& pos);
-        void updateAttack(Pos& pos);
+        void setPlayerShooting(Pos& pos);
+        void updateBars(Pos& pos, int health, int power);
+        void update(Pos& pos, Stats& mainSta);
 
-        //level 1 stage 0
-        bool initL1S0(Pos& pos);
+        //generic movement
+        void handleMovement(Pos& pos, float& playerMoveDiagSpeed);
+        void genericMove(std::vector<std::vector<float>>& posVec, float x_vel, float y_vel, int index);
 
-        //level 1 stage 1
-        bool initL1S1(Pos& pos);
+        //player movement
+        void playerMoveF(Pos& pos);
+        void playerMoveFL(Pos& pos, float& playerMoveDiagSpeed);
+        void playerMoveFR(Pos& pos, float& playerMoveDiagSpeed);
+        void playerMoveB(Pos& pos);
+        void playerMoveBL(Pos& pos, float& playerMoveDiagSpeed);
+        void playerMoveBR(Pos& pos, float& playerMoveDiagSpeed);
+        void playerMoveR(Pos& pos);
+        void playerMoveL(Pos& pos);
 
-        //level 1 stage 2
-        bool initL1S2(Pos& pos);
+};
 
-        //level 1 stage 3 
-        bool initL1S3(Pos& pos);
-        bool updateL1S3(Pos& pos, stats& mainSta);
-        void updateL1S3newPos(Pos& pos);
+class StagePos {
+    public:
+        static bool initialised;
+        //Level 1 movements
+        bool initLvlOneMovement(Pos& pos, Stats& mainSta);
+
 };
 
 

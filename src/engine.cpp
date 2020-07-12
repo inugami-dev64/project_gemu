@@ -2,7 +2,7 @@
 #include "headers/levelstaging.h"
 #include <cmath>
 
-Stage engSta;
+Calc engCalc;
 
 // Function that intializes the window
 void engine::initWindow() {
@@ -125,8 +125,8 @@ bool engine::collisionRec(sf::RectangleShape& rec1, sf::RectangleShape& rec2, bo
 bool engine::circleCollisionCore(sf::Vector2f circleCentre, sf::Vector2f recPos, float radius, float recSize[2]) {
     for(int i = 0; i < 360; i++) {
         std::vector<float> pos(2);
-        pos[0] = circleCentre.x + radius*cos(engSta.degToRad(i));
-        pos[1] = circleCentre.y + radius*sin(engSta.degToRad(i));
+        pos[0] = circleCentre.x + radius*cos(engCalc.degToRad(i));
+        pos[1] = circleCentre.y + radius*sin(engCalc.degToRad(i));
 
         if((recPos.x < pos[0] && pos[0] < recPos.x + recSize[0]) && (recPos.y < pos[1] && pos[1] < recPos.y + recSize[1])) return true;
         if((circleCentre.x < recPos.x && recPos.x < pos[0]) && (circleCentre.y < recPos.y && recPos.y < pos[1])) return true;
