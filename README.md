@@ -16,4 +16,4 @@ Finally run the game
 $ ./gemu
  ```
   
-![alt text(https://www.upload.ee/files/12000451/Screenshot_20200712_203949.png)
+![alt text](https://www.upload.ee/image/12000451/Screenshot_20200712_203949.png)
