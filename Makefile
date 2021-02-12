@@ -1,35 +1,50 @@
-CPPFLAGS += -I SFML/include
-LD_LIBRARY_PATH=SFML/lib
+CXX = g++
+TARGET = gemu
+OBJ = engine.cpp.o \
+	  main.cpp.o \
+	  objects.cpp.o \
+	  positions.cpp.o \
+	  staging.cpp.o \
+	  stats.cpp.o \
+	  base64.cpp.o \
+	  aes.cpp.o \
+	  calc.cpp.o 
 
-gemu: engine.o main.o objects.o positions.o staging.o stats.o base64.o aes.o calc.o
-	g++ engine.o main.o objects.o positions.o staging.o stats.o base64.o aes.o calc.o -o gemu -L SFML/lib -lsfml-graphics -lsfml-window -lsfml-system
+LD_FLAGS = -lsfml-graphics \
+		   -lsfml-window \
+		   -lsfml-system
 
-engine.o: src/engine.cpp
-	g++ -c src/engine.cpp -I SFML/include
 
-main.o: src/main.cpp
-	g++ -c src/main.cpp -I SFML/include
+$(TARGET): $(OBJ)
+	$(CXX) $(OBJ) -o $(TARGET) $(LD_FLAGS)
 
-objects.o: src/objects.cpp
-	g++ -c src/objects.cpp -I SFML/include
+engine.cpp.o: src/engine.cpp
+	$(CXX) -c src/engine.cpp -o engine.cpp.o
 
-positions.o: src/positions.cpp
-	g++ -c src/positions.cpp -I SFML/include
+main.cpp.o: src/main.cpp
+	$(CXX) -c src/main.cpp -o main.cpp.o
 
-staging.o: src/staging.cpp
-	g++ -c src/staging.cpp -I SFML/include
+objects.cpp.o: src/objects.cpp
+	$(CXX) -c src/objects.cpp -o objects.cpp.o
 
-stats.o: src/stats.cpp	
-	g++ -c src/stats.cpp -I SFML/include
+positions.cpp.o: src/positions.cpp
+	$(CXX) -c src/positions.cpp -o positions.cpp.o
 
-calc.o: src/calc.cpp
-	g++ -c src/calc.cpp
+staging.cpp.o: src/staging.cpp
+	$(CXX) -c src/staging.cpp -o staging.cpp.o
 
-base64.o: aes128cbc/base64cpp/base64.cpp
-	g++ -c aes128cbc/base64cpp/base64.cpp
+stats.cpp.o: src/stats.cpp	
+	$(CXX) -c src/stats.cpp -o stats.cpp.o
 
-aes.o: aes128cbc/aes.cpp
-	g++ -c aes128cbc/aes.cpp -I aes128cbc/base64cpp
+calc.cpp.o: src/calc.cpp
+	$(CXX) -c src/calc.cpp -o calc.cpp.o
+
+base64.cpp.o: aes128cbc/base64cpp/base64.cpp
+	$(CXX) -c aes128cbc/base64cpp/base64.cpp -o base64.cpp.o
+
+aes.cpp.o: aes128cbc/aes.cpp
+	$(CXX) -c aes128cbc/aes.cpp -I aes128cbc/base64cpp -o aes.cpp.o
 
 clean:
+	rm -rf gemu
 	rm *.o

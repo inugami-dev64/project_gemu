@@ -2,8 +2,9 @@
 #### Bullet hell shooter made with SFML! <br>
 <br>
 
-### Running the game!
-In Linux based systems use make to compile the program
+### Building the game!
+Make sure that libsfml package is installed!  
+In GNU/Linux based systems use make to compile the program
 ```
 $ make
 ```
