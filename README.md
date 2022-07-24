@@ -1,16 +1,15 @@
-# project_gemu
-#### Bullet hell shooter made with SFML! <br>
-<br>
+# project\_gemu
+Bullet hell shooter made with SFML!
 
 ### Building the game!
 Make sure that libsfml package is installed!  
-In GNU/Linux based systems use make to compile the program
+```
+sudo apt install libsfml-dev
+```
+Build the game using make
+
 ```
 $ make
-```
-Then export SFML library path with
-```
-$ export LD_LIBRARY_PATH=SFML/lib
 ```
 Finally run the game 
 ```
