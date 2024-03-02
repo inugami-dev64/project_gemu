@@ -1,9 +1,0 @@
-oi senpai!
-Kui viitsid siis pls tee rolling_background.xfc lõpuni.
-
-1. Lisa küla põlevate majadega vms, kui see käib üle jõu siis joonista lihtsalt looduse maastik koos mägedega.
-2. Soovitan teha eraldi GIMPi project suurusega 80x60 ja hiljem kopeeri sealne joonistus suurde faili
-3. Kasuta Airbrushi ja Smudge tooli et tekitada pilvede udu efekt
-4. Pildi üleval lõpeta uuesti merega
-5. Kui on joonistatud siis Image - Scale image: width 800, height 6000, interpolaration - none. 
-6. Kui on küsimusi siis Discord (=^･ω･^=) 
